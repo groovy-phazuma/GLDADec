@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 BASE_DIR = Path(__file__).parent
 
-from _utils import processing
+from _utils import gldadec_processing
 
 from logging import getLogger
 logger = getLogger('dev0')
@@ -25,8 +25,12 @@ logger = getLogger('dev0')
 class PreProcessing():
     def __init__(self):
         self.mix_raw = None
+        self.__processing = gldadec_processing
     
     def set_data(self,mix_raw,ann_ref=None,batch_info=None):
+        # remove negeative values
+        fxn = lambda x : 0 if x < 0 else x
+        mix_raw = mix_raw.applymap(fxn)
         self.mix_raw = mix_raw
         self.ann_ref = ann_ref
         self.batch_info = batch_info
@@ -58,21 +62,21 @@ class PreProcessing():
 
         # annotation
         if do_ann:
-            self.target_df = processing.annotation(self.target_df, self.ann_ref)
+            self.target_df = self.__processing.annotation(self.target_df, self.ann_ref)
             logger.info('annotation: {}'.format(self.target_df.shape))
         else:
             pass
         # linear --> log2
         if linear2log:
             df_c = copy.deepcopy(self.target_df)
-            self.target_df = processing.log2(df_c)
+            self.target_df = self.__processing.log2(df_c)
             logger.info('linear2log: {}'.format(self.target_df.shape))
         else:
             pass
         # log2 --> linear
         if log2linear:
             df_c = copy.deepcopy(self.target_df)
-            fxn = lambda x : 2**x if x < 30 else 1073741824 # FIXME: avoid overflow
+            fxn = lambda x : 2**x if x < 30 else 1073741824 # avoid overflow
             self.target_df = df_c.applymap(fxn)
             logger.info('log2linear: {}'.format(self.target_df.shape))
         else:
@@ -94,7 +98,7 @@ class PreProcessing():
             lane_list = info["lane_batch"].tolist()
             lst_batch = [replace_list,prep_list,lane_list]
 
-            comb_df = processing.multi_batch_norm(df_c,lst_batch,do_plots=False)
+            comb_df = self.__processing.multi_batch_norm(df_c,lst_batch,do_plots=False)
             fxn = lambda x : 0 if x<0 else x
             self.target_df = comb_df.applymap(fxn) # negative expression level is not acceptable
             logger.info('batch normalization: {}'.format(self.target_df.shape))
@@ -103,7 +107,7 @@ class PreProcessing():
         # quantile normalization
         if do_quantile:
             df_c = copy.deepcopy(self.target_df)
-            qn_df = processing.quantile(df_c)
+            qn_df = self.__processing.quantile(df_c)
             fxn = lambda x : 0 if x<0 else x
             self.target_df = qn_df.applymap(fxn)
             logger.info('quantile normalization: {}'.format(self.target_df.shape))

@@ -32,7 +32,7 @@ from run import dev0_preprocessing
 from run import dev1_set_data
 from run import dev2_deconvolution
 from run import dev3_evaluation
-from _utils import processing, plot_utils
+from _utils import gldadec_processing, plot_utils
 
 #%%
 logger = logging.getLogger('pipeline')
@@ -44,6 +44,7 @@ class Pipeline():
         self.marker_dic = None
         self.verbose = verbose
         self.mm_df = None
+        self.__processing = gldadec_processing
     
     def from_predata(self,mix_raw,ann_ref=None,batch_info=None,target_samples=['Ctrl','APAP'],
                     do_ann=True,log2linear=False,linear2log=False,do_drop=True,do_batch_norm=True,do_quantile=True,remove_noise=False):
@@ -111,7 +112,7 @@ class Pipeline():
         if method=='CV':
             if outlier:
                 PP = dev0_preprocessing.PreProcessing()
-                log_df = processing.log2(target_df)
+                log_df = self.__processing.log2(target_df)
                 common = set(log_df.index.tolist())
                 for sample in log_df.columns.tolist():
                     log_sample = log_df[sample].replace(0,np.nan).dropna()
@@ -167,7 +168,7 @@ class Pipeline():
         Allowing duplication of marker genes does not work well.
         """
         if norm:
-            linear_norm = processing.freq_norm(self.added_df,self.target_dic)
+            linear_norm = self.__processing.freq_norm(self.added_df,self.target_dic)
             linear_norm = linear_norm.loc[sorted(linear_norm.index.tolist())]
             self.deconv_df = linear_norm/scale
         else:
@@ -310,12 +311,12 @@ class Pipeline():
         if len(deconv_norm_range)==0:
             self.norm_res = self.merge_total_res
         else:
-            self.norm_res = processing.norm_total_res(self.merge_total_res,base_names=deconv_norm_range)
+            self.norm_res = self.__processing.norm_total_res(self.merge_total_res,base_names=deconv_norm_range)
         
         if len(facs_norm_range)==0:
             norm_facs = facs_df
         else:
-            norm_facs = processing.norm_val(val_df=facs_df,base_names=facs_norm_range)
+            norm_facs = self.__processing.norm_val(val_df=facs_df,base_names=facs_norm_range)
         
         # evaluation
         Eval.set_res(total_res=self.norm_res,z_norm=False)

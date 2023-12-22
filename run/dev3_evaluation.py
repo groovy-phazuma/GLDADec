@@ -13,18 +13,19 @@ import sys
 from pathlib import Path
 BASE_DIR = Path(__file__).parent
 
-from _utils import plot_utils, processing
+from _utils import plot_utils, gldadec_processing
 
 class Evaluation():
     def __init__(self):
         self.total_res = None
         self.ref_df = None
+        self.__processing = gldadec_processing
     
     def set_res(self,total_res,z_norm=True):
         if z_norm:
             self.total_res = []
             for res in total_res:
-                z_res = processing.standardz_sample(res) # sample wide normalization
+                z_res = self.__processing.standardz_sample(res) # sample wide normalization
                 self.total_res.append(z_res)
         else:
             self.total_res = total_res
@@ -33,7 +34,7 @@ class Evaluation():
         # ensemble
         sum_res = sum(self.total_res) / len(total_res)
         if z_norm:
-            self.ensemble_res = processing.standardz_sample(sum_res) # sample-wide
+            self.ensemble_res = self.__processing.standardz_sample(sum_res) # sample-wide
         else:
             self.ensemble_res = sum_res
         print('cells in res :',self.ensemble_res.columns.tolist()) # TODO : add logging
@@ -54,7 +55,7 @@ class Evaluation():
         
         """
         if z_norm:
-            z_ref = processing.standardz_sample(ref_df) # sample wide normalization
+            z_ref = self.__processing.standardz_sample(ref_df) # sample wide normalization
             z_ref = z_ref.loc[self.samples]
             self.ref_df = z_ref
         else:

@@ -13,7 +13,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from _utils import processing
+import sys
+from pathlib import Path
+
+from _utils import gldadec_processing
 
 class SetData():
     def __init__(self,verbose=True):
@@ -22,6 +25,7 @@ class SetData():
         self.marker_dic = None
         self.final_int = None
         self.input_mat = None
+        self.__processing = gldadec_processing
     
     def set_expression(self,df):
         """
@@ -178,7 +182,7 @@ class SetData():
 
         # prior information normalization
         if prior_norm:
-            linear_norm = processing.freq_norm(target_df,self.marker_final_dic)
+            linear_norm = self.__processing.freq_norm(target_df,self.marker_final_dic)
             linear_norm = linear_norm.loc[sorted(linear_norm.index.tolist())]
             final_df = linear_norm/norm_scale
         else:
